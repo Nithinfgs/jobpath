@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import textwrap
 from typing import Dict, List
 
 from .analyze import RunAnalysis, Summary, fmt_dur, fmt_range, insights
@@ -33,7 +34,7 @@ def _timeline(a: RunAnalysis, st: Style, width: int, rows: int) -> List[str]:
     hidden = len(jobs) - len(shown)
     shown.sort(key=lambda j: j.started)
 
-    label_w = min(30, max(len(j.name) for j in shown))
+    label_w = min(38, max(len(j.name) for j in shown))
     bar_w = max(20, width - label_w - 12)
     scale = bar_w / a.wall if a.wall else 0
 
@@ -122,15 +123,14 @@ def render_terminal(
         saving = (
             st("−30% saves " + fmt_range(g.faster_30, g.faster_30_max), "green")
             if g.faster_30_max >= 1
-            else st("−30% saves nothing alone: a parallel branch ends as late", "yellow")
+            else st("no gain alone: a parallel branch ties", "yellow")
         )
+        name = _clip(node.job.name, 34).ljust(34)
         out.append(
-            f"  {i}. {st(_clip(node.job.name, 34), 'bold')}  run {fmt_dur(node.duration)}"
-            f"  {st(wait, 'yellow')}"
-            f"  {saving}"
+            f"  {i}. {st(name, 'bold')} run {fmt_dur(node.duration):>6}  {st(wait.ljust(8), 'yellow')} {saving}"
         )
         if slow:
-            out.append(st("    " + slow.strip(), "grey"))
+            out.append(st("     " + slow.strip(), "grey"))
     out.append("")
 
     out.append(st("WHERE THE CRITICAL PATH GOES", "bold"))
@@ -160,7 +160,9 @@ def render_terminal(
     if found:
         out.append(st("FINDINGS", "bold"))
         for f in found:
-            out.append(f"  • {f}")
+            wrapped = textwrap.wrap(f, width=max(40, width - 4))
+            out.append("  • " + wrapped[0])
+            out += ["    " + w for w in wrapped[1:]]
         out.append("")
     out.append(
         st(

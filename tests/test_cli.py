@@ -9,7 +9,7 @@ import pytest
 from jobpath.cli import main, parse_duration
 from jobpath.github import GitHubError, dump_raw, load_raw, parse_target
 
-FIXTURE = str(Path(__file__).parent.parent / "examples" / "ruff-ci.json")
+FIXTURE = str(Path(__file__).parent.parent / "src" / "jobpath" / "data" / "ruff-ci.json")
 
 
 def test_parse_target() -> None:
@@ -82,3 +82,8 @@ def test_budget_gate(capsys: pytest.CaptureFixture[str]) -> None:
 def test_missing_file_is_a_clean_error(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["--file", "/nonexistent/x.json"]) == 2
     assert "jobpath:" in capsys.readouterr().err
+
+
+def test_demo_flag_works_offline(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["--demo", "--no-color"]) == 0
+    assert "bundled sample" in capsys.readouterr().out
