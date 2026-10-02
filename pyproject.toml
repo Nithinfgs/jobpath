@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jobpath"
+version = "0.1.0"
+description = "Find the critical path of your GitHub Actions workflow: which jobs decide wall time and what speeding each up would save."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [{ name = "Nithinfgs" }]
+keywords = ["github-actions", "ci", "profiling", "critical-path", "developer-tools"]
+classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Build Tools",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10"]
+
+[project.scripts]
+jobpath = "jobpath.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Nithinfgs/jobpath"
+Issues = "https://github.com/Nithinfgs/jobpath/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jobpath"]
+
+[tool.ruff]
+line-length = 110
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501", "UP006", "UP007", "UP035", "UP045"]
+
+[tool.mypy]
+strict = true
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
