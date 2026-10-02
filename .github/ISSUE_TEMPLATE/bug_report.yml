@@ -1,0 +1,21 @@
+name: Bug report
+description: jobpath crashed, or its critical path looks wrong
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Paste the command and output. For a wrong critical path, say which job you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Run data (optional but very helpful)
+      description: Attach the file from `jobpath ... --save runs.json` for a public repo. Check it first; it contains job and step names.
+  - type: input
+    id: version
+    attributes:
+      label: jobpath version and Python version
+      placeholder: "0.1.0 / 3.12"
