@@ -7,6 +7,7 @@ import os
 import re
 import shutil
 import sys
+from importlib import resources
 from typing import List, Optional, Tuple
 
 from . import __version__
@@ -51,12 +52,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--branch", help="only runs on this branch")
     p.add_argument("--event", help="only runs triggered by this event (push, pull_request, ...)")
+    p.add_argument(
+        "--demo",
+        action="store_true",
+        help="analyse the bundled sample (astral-sh/ruff CI); no network needed",
+    )
     p.add_argument("--file", help="analyse a JSON file written by --save instead of calling GitHub")
     p.add_argument("--save", metavar="FILE", help="write the raw API data to FILE for offline re-analysis")
     p.add_argument("-f", "--format", choices=["term", "md", "json", "html"], default="term")
     p.add_argument("-o", "--output", metavar="FILE", help="write the report to FILE instead of stdout")
     p.add_argument("--all", action="store_true", help="list every job in the terminal timeline")
+    p.add_argument("--color", action="store_true", help="force ANSI colors even when piped")
     p.add_argument("--no-color", action="store_true", help="disable ANSI colors (NO_COLOR is also honoured)")
+    p.add_argument(
+        "--top", type=int, default=18, metavar="N", help="jobs shown in the terminal timeline (default 18)"
+    )
     p.add_argument(
         "--tolerance",
         type=float,
@@ -76,6 +86,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _load_runs(args: argparse.Namespace) -> Tuple[List[Run], str]:
     """Return (runs, title)."""
+    if args.demo:
+        sample = resources.files("jobpath").joinpath("data", "ruff-ci.json")
+        return load_raw(sample.read_text(encoding="utf-8")), "astral-sh/ruff · CI (bundled sample)"
     if args.file:
         with open(args.file, encoding="utf-8") as f:
             runs = load_raw(f.read())
@@ -111,8 +124,16 @@ def _load_runs(args: argparse.Namespace) -> Tuple[List[Run], str]:
     return [parse_run(r, j) for r, j in raw], title
 
 
+def _utf8_stdout() -> None:
+    """Block characters crash legacy Windows consoles; degrade instead of failing."""
+    reconfigure = getattr(sys.stdout, "reconfigure", None)
+    if reconfigure:
+        reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     args = build_parser().parse_args(argv)
+    _utf8_stdout()
     try:
         runs, title = _load_runs(args)
         analyses = [a for a in (analyze_run(r, args.tolerance) for r in runs) if a]
@@ -133,9 +154,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     elif args.format == "html":
         text = render_html(summary, title)
     else:
-        color = not args.no_color and sys.stdout.isatty() and not args.output and "NO_COLOR" not in os.environ
+        auto = sys.stdout.isatty() and not args.output and "NO_COLOR" not in os.environ
+        color = args.color or (auto and not args.no_color)
         width = min(shutil.get_terminal_size((100, 24)).columns, 120)
-        text = render_terminal(summary, title, color=color, width=width, show_all=args.all)
+        text = render_terminal(summary, title, color=color, width=width, top=args.top, show_all=args.all)
 
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
