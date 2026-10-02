@@ -1,0 +1,14 @@
+name: Feature request
+description: Something jobpath should tell you about your CI
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What question about your CI can't you answer today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like jobpath to show?

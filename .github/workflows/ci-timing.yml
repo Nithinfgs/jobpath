@@ -1,0 +1,27 @@
+# Drop into .github/workflows/ to get a critical-path report on every CI run.
+# Replace "CI" with the name of the workflow you want to profile.
+name: CI timing
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  jobpath:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install git+https://github.com/Nithinfgs/jobpath
+      - name: Write critical-path report to the job summary
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          jobpath "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" \
+            -f md >> "$GITHUB_STEP_SUMMARY"
